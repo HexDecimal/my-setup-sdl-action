@@ -1,0 +1,40 @@
+name: "Setup SDL"
+description: "Personal setup SDL script since the official action does not work on Linux"
+inputs:
+  version:
+    description: "SDL version to install"
+    required: true
+  build-type:
+    description: "CMake build config"
+    required: true
+  install-linux-dependencies:
+    description: "Install SDL API dependencies"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: APT update
+      if: inputs.install-linux-dependencies
+      run: sudo apt-get update
+      shell: bash
+    - name: Install SDL dependencies
+      if: inputs.install-linux-dependencies
+      run: sudo apt-get install build-essential git make
+        pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev
+        libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev
+        libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev
+        libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev
+        libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev
+      shell: bash
+    - name: Clone SDL repo
+      run: git clone https://github.com/libsdl-org/SDL -b "release-${{ inputs.version }}" --depth 1
+      shell: bash
+    - name: Configure SDL
+      run: cmake -S SDL -B /tmp/SDL -D CMAKE_INSTALL_PREFIX=/usr -D SDL_VENDOR_INFO="HexDecimal/my-setup-sdl-action"
+      shell: bash
+    - name: Build SDL
+      run: cmake --build /tmp/SDL --config ${{ inputs.build-type }}
+      shell: bash
+    - name: Install SDL
+      run: sudo cmake --install /tmp/SDL --config ${{ inputs.build-type }}
+      shell: bash
